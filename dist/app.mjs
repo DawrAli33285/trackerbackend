@@ -56847,93 +56847,178 @@ var db = drizzle(pool, { schema: schema_exports });
 
 // src/routes/shipments.ts
 var router2 = (0, import_express2.Router)();
-function events(destination, destinationFlag) {
+function buildSchedule(destination, destinationFlag) {
   return [
     {
-      dayNumber: 1,
-      status: "Order placed",
+      dayOffset: 0,
+      hour: 10,
+      minute: 15,
+      status: "Order picked up from supplier",
       location: "Austin, United States",
       flag: "US",
-      activityText: "Order packed by supplier.",
-      dateLabel: "02 Aug 2026 \xB7 10:15"
+      activityText: "Order picked up from supplier."
     },
     {
-      dayNumber: 2,
-      status: "Departed origin",
+      dayOffset: 1,
+      hour: 18,
+      minute: 40,
+      status: "Departed from Austin, USA",
       location: "Austin, United States",
       flag: "US",
-      activityText: "Departed Austin distribution centre.",
-      dateLabel: "03 Aug 2026 \xB7 18:40"
+      activityText: "Departed Austin distribution centre."
     },
     {
-      dayNumber: 3,
-      status: "In transit",
+      dayOffset: 4,
+      hour: 9,
+      minute: 20,
+      status: "Arrived at Frankfurt hub",
       location: "Frankfurt, Germany",
       flag: "DE",
-      activityText: "Arrived at Frankfurt hub.",
-      dateLabel: "10 Aug 2026 \xB7 16:55"
+      activityText: "Arrived at Frankfurt hub."
     },
     {
-      dayNumber: 4,
-      status: "At destination hub",
+      dayOffset: 5,
+      hour: 14,
+      minute: 10,
+      status: "Departed Frankfurt hub",
+      location: "Frankfurt, Germany",
+      flag: "DE",
+      activityText: "Departed Frankfurt hub."
+    },
+    {
+      dayOffset: 7,
+      hour: 5,
+      minute: 35,
+      status: "Arrived at Dubai hub",
+      location: "Dubai, United Arab Emirates",
+      flag: "AE",
+      activityText: "Arrived at Dubai hub."
+    },
+    {
+      dayOffset: 7,
+      hour: 22,
+      minute: 50,
+      status: "Departed Dubai",
+      location: "Dubai, United Arab Emirates",
+      flag: "AE",
+      activityText: "Departed Dubai hub."
+    },
+    {
+      dayOffset: 10,
+      hour: 11,
+      minute: 15,
+      status: "Arrived in South Africa",
       location: destination,
       flag: destinationFlag,
-      activityText: "Arrived at destination hub.",
-      dateLabel: "12 Aug 2026 \xB7 09:40"
+      activityText: "Arrived in South Africa."
     },
     {
-      dayNumber: 5,
+      dayOffset: 11,
+      hour: 8,
+      minute: 30,
+      status: "Out for delivery",
+      location: destination,
+      flag: destinationFlag,
+      activityText: "Shipment is out for delivery."
+    },
+    {
+      dayOffset: 11,
+      hour: 15,
+      minute: 45,
       status: "Delivered",
       location: destination,
       flag: destinationFlag,
-      activityText: "Shipment delivered. Demo confirmation recorded.",
-      dateLabel: "15 Aug 2026 \xB7 08:20"
+      activityText: "Shipment delivered."
     }
   ];
 }
+function formatDateLabel(date6) {
+  const day = String(date6.getUTCDate()).padStart(2, "0");
+  const month = date6.toLocaleString("en-GB", { month: "short", timeZone: "UTC" });
+  const year = date6.getUTCFullYear();
+  const hours = String(date6.getUTCHours()).padStart(2, "0");
+  const minutes = String(date6.getUTCMinutes()).padStart(2, "0");
+  return `${day} ${month} ${year} \xB7 ${hours}:${minutes}`;
+}
+function formatStartDateLabel(date6) {
+  const day = String(date6.getUTCDate()).padStart(2, "0");
+  const month = date6.toLocaleString("en-GB", { month: "short", timeZone: "UTC" });
+  const year = date6.getUTCFullYear();
+  return `${day} ${month} ${year}`;
+}
+function events(destination, destinationFlag, startAt) {
+  const schedule = buildSchedule(destination, destinationFlag);
+  return schedule.map((step, index) => {
+    const eventDate = new Date(startAt);
+    eventDate.setUTCDate(eventDate.getUTCDate() + step.dayOffset);
+    eventDate.setUTCHours(step.hour, step.minute, 0, 0);
+    return {
+      dayNumber: index + 1,
+      status: step.status,
+      location: step.location,
+      flag: step.flag,
+      activityText: step.activityText,
+      dateLabel: formatDateLabel(eventDate)
+    };
+  });
+}
+function buildSeedShipment(overrides, destination, destinationFlag, startAt, demoStepIndex) {
+  const activityLog = events(destination, destinationFlag, startAt);
+  const matchedStep = activityLog[demoStepIndex] ?? activityLog[0];
+  return {
+    ...overrides,
+    startDate: formatStartDateLabel(startAt),
+    demoDay: matchedStep.dayNumber,
+    currentStatus: matchedStep.status,
+    currentLocation: matchedStep.location,
+    currentFlag: matchedStep.flag,
+    activityLog
+  };
+}
+var seedStartAt = /* @__PURE__ */ new Date();
 var seedShipments = [
-  {
-    trackingNumber: "773G63H12K53",
-    recipientName: "Mr. J. van der Merwe",
-    deliveryAddress: "Plot 44, Rietfontein Farm",
-    townCity: "Bloemfontein",
-    itemsOrdered: ["Starlink Mounting Kit", "Backup Power Unit", "10m Cable"],
-    carrierLabel: "Maersk Air Cargo",
-    startDate: "02 Aug 2026",
-    currentStatus: "In transit",
-    currentLocation: "Frankfurt, Germany",
-    currentFlag: "DE",
-    demoDay: 3,
-    activityLog: events("Bloemfontein, South Africa", "ZA")
-  },
-  {
-    trackingNumber: "6F2K9D1L47P7",
-    recipientName: "Lindiwe Mokoena",
-    deliveryAddress: "18 Olive Grove",
-    townCity: "Cape Town",
-    itemsOrdered: ["Field Router", "Weatherproof Case"],
-    carrierLabel: "Qatar Airways Cargo",
-    startDate: "06 Aug 2026",
-    currentStatus: "Pending",
-    currentLocation: "Johannesburg, South Africa",
-    currentFlag: "ZA",
-    demoDay: 4,
-    activityLog: events("Cape Town, South Africa", "ZA")
-  },
-  {
-    trackingNumber: "50872Q01B29Z",
-    recipientName: "Rafael Santos",
-    deliveryAddress: "7 Garden Walk",
-    townCity: "Durban",
-    itemsOrdered: ["Solar Charge Controller"],
-    carrierLabel: "Emirates SkyCargo",
-    startDate: "09 Aug 2026",
-    currentStatus: "Delivered",
-    currentLocation: "Durban, South Africa",
-    currentFlag: "ZA",
-    demoDay: 5,
-    activityLog: events("Durban, South Africa", "ZA")
-  }
+  buildSeedShipment(
+    {
+      trackingNumber: "773G63H12K53",
+      recipientName: "Mr. J. van der Merwe",
+      deliveryAddress: "Plot 44, Rietfontein Farm",
+      townCity: "Bloemfontein",
+      itemsOrdered: ["Starlink Mounting Kit", "Backup Power Unit", "10m Cable"],
+      carrierLabel: "Maersk Air Cargo"
+    },
+    "Bloemfontein, South Africa",
+    "ZA",
+    seedStartAt,
+    2
+  ),
+  buildSeedShipment(
+    {
+      trackingNumber: "6F2K9D1L47P7",
+      recipientName: "Lindiwe Mokoena",
+      deliveryAddress: "18 Olive Grove",
+      townCity: "Cape Town",
+      itemsOrdered: ["Field Router", "Weatherproof Case"],
+      carrierLabel: "Qatar Airways Cargo"
+    },
+    "Cape Town, South Africa",
+    "ZA",
+    seedStartAt,
+    3
+  ),
+  buildSeedShipment(
+    {
+      trackingNumber: "50872Q01B29Z",
+      recipientName: "Rafael Santos",
+      deliveryAddress: "7 Garden Walk",
+      townCity: "Durban",
+      itemsOrdered: ["Solar Charge Controller"],
+      carrierLabel: "Emirates SkyCargo"
+    },
+    "Durban, South Africa",
+    "ZA",
+    seedStartAt,
+    8
+  )
 ];
 function serializeShipment(shipment) {
   return {
@@ -56958,9 +57043,20 @@ router2.get("/shipments", async (req, res) => {
 router2.post("/shipments", async (req, res) => {
   try {
     const body = CreateShipmentBody.parse(req.body);
+    const startAt = /* @__PURE__ */ new Date();
+    const destination = `${body.townCity}, South Africa`;
+    const destinationFlag = "ZA";
+    const activityLog = events(destination, destinationFlag, startAt);
+    const firstStep = activityLog[0];
     const [shipment] = await db.insert(shipmentsTable).values({
       ...body,
-      trackingNumber: body.trackingNumber.toUpperCase()
+      trackingNumber: body.trackingNumber.toUpperCase(),
+      startDate: formatStartDateLabel(startAt),
+      currentStatus: firstStep.status,
+      currentLocation: firstStep.location,
+      currentFlag: firstStep.flag,
+      demoDay: firstStep.dayNumber,
+      activityLog
     }).returning();
     res.status(201).json(serializeShipment(shipment));
   } catch (error40) {
