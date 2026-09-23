@@ -38321,7 +38321,7 @@ var DeleteShipmentResponse = voidType();
 
 // src/routes/health.ts
 var router = (0, import_express.Router)();
-router.get("/healthz", (_req, res) => {
+router.get("/health", (_req, res) => {
   const data = HealthCheckResponse.parse({ status: "ok" });
   res.json(data);
 });
@@ -56849,87 +56849,64 @@ var db = drizzle(pool, { schema: schema_exports });
 var router2 = (0, import_express2.Router)();
 function buildSchedule(destination, destinationFlag) {
   return [
-    {
-      dayOffset: 0,
-      hour: 10,
-      minute: 15,
-      status: "Order picked up from supplier",
-      location: "Austin, United States",
-      flag: "US",
-      activityText: "Order picked up from supplier."
-    },
-    {
-      dayOffset: 1,
-      hour: 18,
-      minute: 40,
-      status: "Departed from Austin, USA",
-      location: "Austin, United States",
-      flag: "US",
-      activityText: "Departed Austin distribution centre."
-    },
-    {
-      dayOffset: 4,
-      hour: 9,
-      minute: 20,
-      status: "Arrived at Frankfurt hub",
-      location: "Frankfurt, Germany",
-      flag: "DE",
-      activityText: "Arrived at Frankfurt hub."
-    },
-    {
-      dayOffset: 5,
-      hour: 14,
-      minute: 10,
-      status: "Departed Frankfurt hub",
-      location: "Frankfurt, Germany",
-      flag: "DE",
-      activityText: "Departed Frankfurt hub."
-    },
-    {
-      dayOffset: 7,
-      hour: 5,
-      minute: 35,
-      status: "Arrived at Dubai hub",
-      location: "Dubai, United Arab Emirates",
-      flag: "AE",
-      activityText: "Arrived at Dubai hub."
-    },
-    {
-      dayOffset: 7,
-      hour: 22,
-      minute: 50,
-      status: "Departed Dubai",
-      location: "Dubai, United Arab Emirates",
-      flag: "AE",
-      activityText: "Departed Dubai hub."
-    },
-    {
-      dayOffset: 10,
-      hour: 11,
-      minute: 15,
-      status: "Arrived in South Africa",
-      location: destination,
-      flag: destinationFlag,
-      activityText: "Arrived in South Africa."
-    },
-    {
-      dayOffset: 11,
-      hour: 8,
-      minute: 30,
-      status: "Out for delivery",
-      location: destination,
-      flag: destinationFlag,
-      activityText: "Shipment is out for delivery."
-    },
-    {
-      dayOffset: 11,
-      hour: 15,
-      minute: 45,
-      status: "Delivered",
-      location: destination,
-      flag: destinationFlag,
-      activityText: "Shipment delivered."
-    }
+    { dayOffset: 1, hour: 9, minute: 0, status: "Order Placed", location: "Austin, USA", flag: "US", activityText: "Order confirmed. Preparing for packing." },
+    { dayOffset: 3, hour: 9, minute: 0, status: "Packed at Supplier", location: "Austin, USA", flag: "US", activityText: "Item packed and sealed." },
+    { dayOffset: 5, hour: 9, minute: 0, status: "Picked Up", location: "Austin, USA", flag: "US", activityText: "Parcel collected by freight partner." },
+    { dayOffset: 7, hour: 9, minute: 0, status: "At Export Hub", location: "Dallas, USA", flag: "US", activityText: "Parcel arrived at Dallas export hub." },
+    { dayOffset: 9, hour: 9, minute: 0, status: "Export Processing", location: "Dallas, USA", flag: "US", activityText: "Export documentation submitted." },
+    { dayOffset: 11, hour: 9, minute: 0, status: "Cleared for Export", location: "Dallas, USA", flag: "US", activityText: "Export clearance approved." },
+    { dayOffset: 12, hour: 9, minute: 0, status: "Departed USA", location: "Dallas, USA", flag: "US", activityText: "Parcel departed Dallas on flight to Frankfurt." },
+    { dayOffset: 13, hour: 9, minute: 0, status: "In Transit", location: "Over Atlantic", flag: "US", activityText: "Parcel in transit to Frankfurt." },
+    { dayOffset: 15, hour: 9, minute: 0, status: "Arrived Germany", location: "Frankfurt, Germany", flag: "DE", activityText: "Parcel arrived at Frankfurt Airport." },
+    { dayOffset: 17, hour: 9, minute: 0, status: "At Transit Hub", location: "Frankfurt, Germany", flag: "DE", activityText: "Parcel transferred to international transit facility." },
+    { dayOffset: 19, hour: 9, minute: 0, status: "Awaiting Connection", location: "Frankfurt, Germany", flag: "DE", activityText: "Awaiting connecting flight to Dubai." },
+    { dayOffset: 21, hour: 9, minute: 0, status: "Flight Delayed", location: "Frankfurt, Germany", flag: "DE", activityText: "Connecting flight delayed. Rescheduled." },
+    { dayOffset: 23, hour: 9, minute: 0, status: "Rescheduled", location: "Frankfurt, Germany", flag: "DE", activityText: "Parcel rebooked on next available flight." },
+    { dayOffset: 25, hour: 9, minute: 0, status: "Documentation", location: "Frankfurt, Germany", flag: "DE", activityText: "Export documentation for UAE submitted." },
+    { dayOffset: 28, hour: 9, minute: 0, status: "Departed Germany", location: "Frankfurt, Germany", flag: "DE", activityText: "Parcel departed Frankfurt on flight to Dubai." },
+    { dayOffset: 29, hour: 9, minute: 0, status: "In Transit", location: "Over Europe", flag: "DE", activityText: "Parcel in transit to Dubai." },
+    { dayOffset: 31, hour: 9, minute: 0, status: "Arrived UAE", location: "Dubai, UAE", flag: "AE", activityText: "Parcel arrived at Dubai International Airport." },
+    { dayOffset: 33, hour: 9, minute: 0, status: "At Transit Hub", location: "Dubai, UAE", flag: "AE", activityText: "Parcel transferred to Dubai transit facility." },
+    { dayOffset: 35, hour: 9, minute: 0, status: "Awaiting Connection", location: "Dubai, UAE", flag: "AE", activityText: "Awaiting connecting flight to Nairobi." },
+    { dayOffset: 37, hour: 9, minute: 0, status: "Flight Rescheduled", location: "Dubai, UAE", flag: "AE", activityText: "Connecting flight rescheduled." },
+    { dayOffset: 39, hour: 9, minute: 0, status: "Rebooked", location: "Dubai, UAE", flag: "AE", activityText: "Parcel rebooked on next available flight." },
+    { dayOffset: 41, hour: 9, minute: 0, status: "Documentation", location: "Dubai, UAE", flag: "AE", activityText: "Export documentation for Kenya submitted." },
+    { dayOffset: 43, hour: 9, minute: 0, status: "Security Check", location: "Dubai, UAE", flag: "AE", activityText: "Routine security screening completed." },
+    { dayOffset: 45, hour: 9, minute: 0, status: "Departed UAE", location: "Dubai, UAE", flag: "AE", activityText: "Parcel departed Dubai on flight to Nairobi." },
+    { dayOffset: 46, hour: 9, minute: 0, status: "In Transit", location: "Over Indian Ocean", flag: "AE", activityText: "Parcel in transit to Nairobi." },
+    { dayOffset: 48, hour: 9, minute: 0, status: "Arrived Kenya", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel arrived at Jomo Kenyatta Airport." },
+    { dayOffset: 50, hour: 9, minute: 0, status: "At Transit Hub", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel transferred to regional transit facility." },
+    { dayOffset: 52, hour: 9, minute: 0, status: "Awaiting Connection", location: "Nairobi, Kenya", flag: "KE", activityText: "Awaiting connecting flight to Johannesburg." },
+    { dayOffset: 54, hour: 9, minute: 0, status: "Flight Delayed", location: "Nairobi, Kenya", flag: "KE", activityText: "Connecting flight delayed." },
+    { dayOffset: 56, hour: 9, minute: 0, status: "Rebooked", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel rebooked on next available flight." },
+    { dayOffset: 58, hour: 9, minute: 0, status: "Documentation", location: "Nairobi, Kenya", flag: "KE", activityText: "Export documentation for South Africa submitted." },
+    { dayOffset: 60, hour: 9, minute: 0, status: "Departed Kenya", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel departed Nairobi on flight to Johannesburg." },
+    { dayOffset: 61, hour: 9, minute: 0, status: "In Transit", location: "Over Southern Africa", flag: "KE", activityText: "Parcel in transit to Johannesburg." },
+    { dayOffset: 63, hour: 9, minute: 0, status: "Arrived SA", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel arrived at OR Tambo International Airport." },
+    { dayOffset: 65, hour: 9, minute: 0, status: "At Import Hub", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel transferred to SARS import facility." },
+    { dayOffset: 67, hour: 9, minute: 0, status: "Customs Processing", location: "Johannesburg, SA", flag: "ZA", activityText: "Import documentation submitted for customs review." },
+    { dayOffset: 69, hour: 9, minute: 0, status: "Customs Review", location: "Johannesburg, SA", flag: "ZA", activityText: "Customs review in progress." },
+    { dayOffset: 71, hour: 9, minute: 0, status: "Duty Assessed", location: "Johannesburg, SA", flag: "ZA", activityText: "Customs duty assessed. Awaiting payment." },
+    { dayOffset: 73, hour: 9, minute: 0, status: "Duty Paid", location: "Johannesburg, SA", flag: "ZA", activityText: "Customs duty payment received. Parcel released." },
+    { dayOffset: 75, hour: 9, minute: 0, status: "Cleared Customs", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel cleared for domestic delivery." },
+    { dayOffset: 76, hour: 9, minute: 0, status: "At National Hub", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel arrived at national distribution hub." },
+    { dayOffset: 78, hour: 9, minute: 0, status: "Sorting", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel sorted for regional transfer." },
+    { dayOffset: 80, hour: 9, minute: 0, status: "In Transit", location: "Regional Hub", flag: "ZA", activityText: "Parcel in transit to regional distribution center." },
+    { dayOffset: 82, hour: 9, minute: 0, status: "At Regional Hub", location: "Regional Hub", flag: "ZA", activityText: "Parcel arrived at regional hub." },
+    { dayOffset: 83, hour: 9, minute: 0, status: "Local Dispatch", location: "Local Depot", flag: "ZA", activityText: "Parcel dispatched to local delivery depot." },
+    { dayOffset: 84, hour: 9, minute: 0, status: "At Local Depot", location: destination, flag: destinationFlag, activityText: "Parcel arrived at local delivery depot." },
+    { dayOffset: 86, hour: 9, minute: 0, status: "Out for Delivery", location: destination, flag: destinationFlag, activityText: "Parcel out for delivery. Driver assigned." },
+    { dayOffset: 88, hour: 9, minute: 0, status: "Delivery Attempted", location: destination, flag: destinationFlag, activityText: "Delivery attempted. No one available." },
+    { dayOffset: 90, hour: 9, minute: 0, status: "Redelivery Scheduled", location: destination, flag: destinationFlag, activityText: "Redelivery scheduled for next available slot." },
+    { dayOffset: 92, hour: 9, minute: 0, status: "Out for Delivery", location: destination, flag: destinationFlag, activityText: "Second delivery attempt." },
+    { dayOffset: 94, hour: 9, minute: 0, status: "Delivery Attempted", location: destination, flag: destinationFlag, activityText: "Delivery attempted. Address inaccessible." },
+    { dayOffset: 96, hour: 9, minute: 0, status: "Held at Depot", location: destination, flag: destinationFlag, activityText: "Parcel held at depot. Awaiting instructions." },
+    { dayOffset: 98, hour: 9, minute: 0, status: "Investigation", location: destination, flag: destinationFlag, activityText: "Parcel under review." },
+    { dayOffset: 100, hour: 9, minute: 0, status: "Parcel Located", location: destination, flag: destinationFlag, activityText: "Parcel located. Rescheduled for delivery." },
+    { dayOffset: 102, hour: 9, minute: 0, status: "Out for Delivery", location: destination, flag: destinationFlag, activityText: "Final delivery attempt." },
+    { dayOffset: 105, hour: 9, minute: 0, status: "Delivered", location: destination, flag: destinationFlag, activityText: "Parcel delivered. Signature on file." },
+    { dayOffset: 107, hour: 9, minute: 0, status: "Dispute Window", location: destination, flag: destinationFlag, activityText: "Dispute window open for 48 hours." },
+    { dayOffset: 110, hour: 9, minute: 0, status: "Case Closed", location: destination, flag: destinationFlag, activityText: "Delivery confirmed. Case closed." }
   ];
 }
 function formatDateLabel(date6) {
@@ -56948,12 +56925,12 @@ function formatStartDateLabel(date6) {
 }
 function events(destination, destinationFlag, startAt) {
   const schedule = buildSchedule(destination, destinationFlag);
-  return schedule.map((step, index) => {
+  return schedule.map((step) => {
     const eventDate = new Date(startAt);
     eventDate.setUTCDate(eventDate.getUTCDate() + step.dayOffset);
     eventDate.setUTCHours(step.hour, step.minute, 0, 0);
     return {
-      dayNumber: index + 1,
+      dayNumber: step.dayOffset,
       status: step.status,
       location: step.location,
       flag: step.flag,

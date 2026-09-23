@@ -41,14 +41,14 @@ export async function syncShipmentStatuses(now: Date = new Date()): Promise<void
     if (!hasChanged) continue;
 
     await db
-      .update(shipmentsTable)
-      .set({
-        currentStatus: matchedStep.status,
-        currentLocation: matchedStep.location,
-        currentFlag: matchedStep.flag,
-        demoDay: matchedIndex + 1,
-        updatedAt: now,
-      })
-      .where(eq(shipmentsTable.id, shipment.id));
+    .update(shipmentsTable)
+    .set({
+      currentStatus: matchedStep.status,
+      currentLocation: matchedStep.location,
+      currentFlag: matchedStep.flag,
+      demoDay: matchedStep.dayOffset,
+      updatedAt: now,
+    })
+    .where(eq(shipmentsTable.id, shipment.id));
   }
 }
