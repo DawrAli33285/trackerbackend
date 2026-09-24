@@ -116,8 +116,21 @@ function formatStartDateLabel(date: Date): string {
   return `${day} ${month} ${year}`;
 }
 
+function randomizeOffsets(schedule: ScheduleStep[]): ScheduleStep[] {
+  let day = 0;
+  return schedule.map((step, index) => {
+    const isFirst = index === 0;
+    const sameDayAsPrevious = !isFirst && Math.random() < 0.2;
+    if (!sameDayAsPrevious) {
+      day += Math.random() < 0.5 ? 1 : 2;
+    }
+    const hour = Math.floor(Math.random() * 24);
+    const minute = Math.floor(Math.random() * 60);
+    return { ...step, dayOffset: day, hour, minute };
+  });
+}
 function events(destination: string, destinationFlag: string, startAt: Date): ShipmentActivity[] {
-  const schedule = buildSchedule(destination, destinationFlag);
+  const schedule = randomizeOffsets(buildSchedule(destination, destinationFlag));
 
   return schedule.map((step) => {
     const eventDate = new Date(startAt);
@@ -134,6 +147,7 @@ function events(destination: string, destinationFlag: string, startAt: Date): Sh
     };
   });
 }
+
 
 function buildSeedShipment(
   overrides: {

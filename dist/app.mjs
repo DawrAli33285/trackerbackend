@@ -56923,8 +56923,21 @@ function formatStartDateLabel(date6) {
   const year = date6.getUTCFullYear();
   return `${day} ${month} ${year}`;
 }
+function randomizeOffsets(schedule) {
+  let day = 0;
+  return schedule.map((step, index) => {
+    const isFirst = index === 0;
+    const sameDayAsPrevious = !isFirst && Math.random() < 0.2;
+    if (!sameDayAsPrevious) {
+      day += Math.random() < 0.5 ? 1 : 2;
+    }
+    const hour = Math.floor(Math.random() * 24);
+    const minute = Math.floor(Math.random() * 60);
+    return { ...step, dayOffset: day, hour, minute };
+  });
+}
 function events(destination, destinationFlag, startAt) {
-  const schedule = buildSchedule(destination, destinationFlag);
+  const schedule = randomizeOffsets(buildSchedule(destination, destinationFlag));
   return schedule.map((step) => {
     const eventDate = new Date(startAt);
     eventDate.setUTCDate(eventDate.getUTCDate() + step.dayOffset);

@@ -57299,8 +57299,21 @@ function formatStartDateLabel(date6) {
   const year = date6.getUTCFullYear();
   return `${day} ${month} ${year}`;
 }
+function randomizeOffsets(schedule2) {
+  let day = 0;
+  return schedule2.map((step, index) => {
+    const isFirst = index === 0;
+    const sameDayAsPrevious = !isFirst && Math.random() < 0.2;
+    if (!sameDayAsPrevious) {
+      day += Math.random() < 0.5 ? 1 : 2;
+    }
+    const hour = Math.floor(Math.random() * 24);
+    const minute = Math.floor(Math.random() * 60);
+    return { ...step, dayOffset: day, hour, minute };
+  });
+}
 function events(destination, destinationFlag, startAt) {
-  const schedule2 = buildSchedule(destination, destinationFlag);
+  const schedule2 = randomizeOffsets(buildSchedule(destination, destinationFlag));
   return schedule2.map((step) => {
     const eventDate = new Date(startAt);
     eventDate.setUTCDate(eventDate.getUTCDate() + step.dayOffset);
@@ -59540,26 +59553,19 @@ async function syncShipmentStatuses(now = /* @__PURE__ */ new Date()) {
   for (const shipment of shipments) {
     const isAlreadyDelivered = shipment.currentStatus === "Delivered";
     if (isAlreadyDelivered) continue;
-    const destination = shipment.currentLocation.includes("South Africa") ? shipment.currentLocation : `${shipment.townCity}, South Africa`;
-    const schedule2 = buildSchedule(destination, shipment.currentFlag ?? "ZA");
+    const schedule2 = shipment.activityLog;
     const elapsedDays = daysSince(shipment.createdAt, now);
-    let matchedStep = schedule2[0];
-    let matchedIndex = 0;
-    for (let i = 0; i < schedule2.length; i++) {
-      if (schedule2[i].dayOffset <= elapsedDays) {
-        matchedStep = schedule2[i];
-        matchedIndex = i;
-      } else {
-        break;
-      }
-    }
-    const hasChanged = shipment.currentStatus !== matchedStep.status || shipment.currentLocation !== matchedStep.location;
-    if (!hasChanged) continue;
+    const currentIndex = schedule2.findIndex(
+      (step) => step.status === shipment.currentStatus && step.location === shipment.currentLocation
+    );
+    const nextIndex = currentIndex === -1 ? 0 : currentIndex + 1;
+    const nextStep = schedule2[nextIndex];
+    if (!nextStep || nextStep.dayNumber > elapsedDays) continue;
     await db.update(shipmentsTable).set({
-      currentStatus: matchedStep.status,
-      currentLocation: matchedStep.location,
-      currentFlag: matchedStep.flag,
-      demoDay: matchedStep.dayOffset,
+      currentStatus: nextStep.status,
+      currentLocation: nextStep.location,
+      currentFlag: nextStep.flag,
+      demoDay: nextStep.dayNumber,
       updatedAt: now
     }).where(eq(shipmentsTable.id, shipment.id));
   }

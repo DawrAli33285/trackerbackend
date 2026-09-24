@@ -6,7 +6,8 @@ export function startCronJobs(): void {
  
   // cron.schedule("0 0 * * *", async () => {
     // cron.schedule("* * * * *", async () => {
-        cron.schedule("*/30 * * * * *", async () => {
+        // cron.schedule("*/30 * * * * *", async () => {
+    cron.schedule("0 0 * * *", async () => {
     try {
       logger.info("Starting shipment status sync");
       await syncShipmentStatuses();
