@@ -10,7 +10,7 @@ import { db, shipmentsTable, type ShipmentActivity } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 
 const router: IRouter = Router();
-
+console.log("[shipments] route file loaded: v3");
 type ShipmentPayload = {
   trackingNumber: string;
   recipientName: string;
@@ -19,6 +19,7 @@ type ShipmentPayload = {
   itemsOrdered: string[];
   carrierLabel: string;
   startDate: string;
+  endDate?: string | null;
   currentStatus: string;
   currentLocation: string;
   currentFlag: string;
@@ -38,8 +39,8 @@ type ScheduleStep = {
 
 export function buildSchedule(destination: string, destinationFlag: string): ScheduleStep[] {
   return [
-    { dayOffset: 1, hour: 9, minute: 0, status: "Order Placed", location: "Austin, USA", flag: "US", activityText: "Order confirmed. Preparing for packing." },
-    { dayOffset: 3, hour: 9, minute: 0, status: "Packed at Supplier", location: "Austin, USA", flag: "US", activityText: "Item packed and sealed." },
+    { dayOffset: 1, hour: 9, minute: 0, status: "Order Placed", location: "Austin, USA", flag: "US", activityText: "Order confirmed. Preparing for packing. [v3]" },
+    { dayOffset: 3, hour: 9, minute: 0, status: "Packed at Warehouse", location: "Austin, USA", flag: "US", activityText: "Item packed and sealed." },
     { dayOffset: 5, hour: 9, minute: 0, status: "Picked Up", location: "Austin, USA", flag: "US", activityText: "Parcel collected by freight partner." },
     { dayOffset: 7, hour: 9, minute: 0, status: "At Export Hub", location: "Dallas, USA", flag: "US", activityText: "Parcel arrived at Dallas export hub." },
     { dayOffset: 9, hour: 9, minute: 0, status: "Export Processing", location: "Dallas, USA", flag: "US", activityText: "Export documentation submitted." },
@@ -52,7 +53,7 @@ export function buildSchedule(destination: string, destinationFlag: string): Sch
     { dayOffset: 21, hour: 9, minute: 0, status: "Flight Delayed", location: "Frankfurt, Germany", flag: "DE", activityText: "Connecting flight delayed. Rescheduled." },
     { dayOffset: 23, hour: 9, minute: 0, status: "Rescheduled", location: "Frankfurt, Germany", flag: "DE", activityText: "Parcel rebooked on next available flight." },
     { dayOffset: 25, hour: 9, minute: 0, status: "Documentation", location: "Frankfurt, Germany", flag: "DE", activityText: "Export documentation for UAE submitted." },
-    { dayOffset: 28, hour: 9, minute: 0, status: "Departed Germany", location: "Frankfurt, Germany", flag: "DE", activityText: "Parcel departed Frankfurt on flight to Dubai." },
+    { dayOffset: 28, hour: 9, minute: 0, status: "Departed Germany, Berlin", location: "Frankfurt, Germany", flag: "DE", activityText: "Parcel departed Frankfurt on flight to Dubai." },
     { dayOffset: 29, hour: 9, minute: 0, status: "In Transit", location: "Over Europe", flag: "DE", activityText: "Parcel in transit to Dubai." },
     { dayOffset: 31, hour: 9, minute: 0, status: "Arrived UAE", location: "Dubai, UAE", flag: "AE", activityText: "Parcel arrived at Dubai International Airport." },
     { dayOffset: 33, hour: 9, minute: 0, status: "At Transit Hub", location: "Dubai, UAE", flag: "AE", activityText: "Parcel transferred to Dubai transit facility." },
@@ -61,9 +62,9 @@ export function buildSchedule(destination: string, destinationFlag: string): Sch
     { dayOffset: 39, hour: 9, minute: 0, status: "Rebooked", location: "Dubai, UAE", flag: "AE", activityText: "Parcel rebooked on next available flight." },
     { dayOffset: 41, hour: 9, minute: 0, status: "Documentation", location: "Dubai, UAE", flag: "AE", activityText: "Export documentation for Kenya submitted." },
     { dayOffset: 43, hour: 9, minute: 0, status: "Security Check", location: "Dubai, UAE", flag: "AE", activityText: "Routine security screening completed." },
-    { dayOffset: 45, hour: 9, minute: 0, status: "Departed UAE", location: "Dubai, UAE", flag: "AE", activityText: "Parcel departed Dubai on flight to Nairobi." },
+    { dayOffset: 45, hour: 9, minute: 0, status: "Departed UAE, Dubai", location: "Dubai, UAE", flag: "AE", activityText: "Parcel departed Dubai on flight to Nairobi." },
     { dayOffset: 46, hour: 9, minute: 0, status: "In Transit", location: "Over Indian Ocean", flag: "AE", activityText: "Parcel in transit to Nairobi." },
-    { dayOffset: 48, hour: 9, minute: 0, status: "Arrived Kenya", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel arrived at Jomo Kenyatta Airport." },
+    { dayOffset: 48, hour: 9, minute: 0, status: "Arrived Kenya, Nairobi", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel arrived at Jomo Kenyatta Airport." },
     { dayOffset: 50, hour: 9, minute: 0, status: "At Transit Hub", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel transferred to regional transit facility." },
     { dayOffset: 52, hour: 9, minute: 0, status: "Awaiting Connection", location: "Nairobi, Kenya", flag: "KE", activityText: "Awaiting connecting flight to Johannesburg." },
     { dayOffset: 54, hour: 9, minute: 0, status: "Flight Delayed", location: "Nairobi, Kenya", flag: "KE", activityText: "Connecting flight delayed." },
@@ -71,7 +72,7 @@ export function buildSchedule(destination: string, destinationFlag: string): Sch
     { dayOffset: 58, hour: 9, minute: 0, status: "Documentation", location: "Nairobi, Kenya", flag: "KE", activityText: "Export documentation for South Africa submitted." },
     { dayOffset: 60, hour: 9, minute: 0, status: "Departed Kenya", location: "Nairobi, Kenya", flag: "KE", activityText: "Parcel departed Nairobi on flight to Johannesburg." },
     { dayOffset: 61, hour: 9, minute: 0, status: "In Transit", location: "Over Southern Africa", flag: "KE", activityText: "Parcel in transit to Johannesburg." },
-    { dayOffset: 63, hour: 9, minute: 0, status: "Arrived SA", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel arrived at OR Tambo International Airport." },
+    { dayOffset: 63, hour: 9, minute: 0, status: "Arrived South Africa, Johannesburg", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel arrived at OR Tambo International Airport." },
     { dayOffset: 65, hour: 9, minute: 0, status: "At Import Hub", location: "Johannesburg, SA", flag: "ZA", activityText: "Parcel transferred to SARS import facility." },
     { dayOffset: 67, hour: 9, minute: 0, status: "Customs Processing", location: "Johannesburg, SA", flag: "ZA", activityText: "Import documentation submitted for customs review." },
     { dayOffset: 69, hour: 9, minute: 0, status: "Customs Review", location: "Johannesburg, SA", flag: "ZA", activityText: "Customs review in progress." },
@@ -116,22 +117,82 @@ function formatStartDateLabel(date: Date): string {
   return `${day} ${month} ${year}`;
 }
 
-function randomizeOffsets(schedule: ScheduleStep[]): ScheduleStep[] {
+const MINUTES_IN_DAY = 24 * 60;
+
+function randomizeOffsets(schedule: ScheduleStep[], startAt: Date): ScheduleStep[] {
   let day = 0;
+  let prevMinutes = startAt.getUTCHours() * 60 + startAt.getUTCMinutes();
+
   return schedule.map((step, index) => {
-    const isFirst = index === 0;
-    const sameDayAsPrevious = !isFirst && Math.random() < 0.2;
-    if (!sameDayAsPrevious) {
-      day += Math.random() < 0.5 ? 1 : 2;
+    // "Order Placed" = the current date and time
+    if (index === 0) {
+      return {
+        ...step,
+        dayOffset: 0,
+        hour: startAt.getUTCHours(),
+        minute: startAt.getUTCMinutes(),
+      };
     }
-    const hour = Math.floor(Math.random() * 24);
-    const minute = Math.floor(Math.random() * 60);
-    return { ...step, dayOffset: day, hour, minute };
+
+    // Same-day steps only after step 1, and only if there's time left in the day
+    const shareDay =
+      index > 1 && prevMinutes < MINUTES_IN_DAY - 1 && Math.random() < 0.2;
+
+    let minutesOfDay: number;
+    if (shareDay) {
+      // strictly later than the previous event on the same day
+      minutesOfDay =
+        prevMinutes + 1 + Math.floor(Math.random() * (MINUTES_IN_DAY - 1 - prevMinutes));
+    } else {
+      day += Math.random() < 0.5 ? 1 : 2;
+      minutesOfDay = Math.floor(Math.random() * MINUTES_IN_DAY);
+    }
+
+    prevMinutes = minutesOfDay;
+    return {
+      ...step,
+      dayOffset: day,
+      hour: Math.floor(minutesOfDay / 60),
+      minute: minutesOfDay % 60,
+    };
   });
 }
-function events(destination: string, destinationFlag: string, startAt: Date): ShipmentActivity[] {
-  const schedule = randomizeOffsets(buildSchedule(destination, destinationFlag));
 
+
+// First step = startAt, last step = endAt, everything else random in between (always in order)
+function spreadDates(count: number, startAt: Date, endAt: Date): Date[] {
+  const span = endAt.getTime() - startAt.getTime();
+  const middle = Array.from({ length: Math.max(count - 2, 0) }, () => Math.random()).sort((a, b) => a - b);
+  return [0, ...middle, 1].map((fraction) => {
+    const date = new Date(startAt.getTime() + Math.round(fraction * span));
+    date.setUTCSeconds(0, 0);
+    return date;
+  });
+}
+
+function events(
+  destination: string,
+  destinationFlag: string,
+  startAt: Date,
+  endAt?: Date | null,
+): ShipmentActivity[] {
+  const baseSchedule = buildSchedule(destination, destinationFlag);
+  const hasRange = !!endAt && endAt.getTime() > startAt.getTime();
+
+  if (hasRange) {
+    const dates = spreadDates(baseSchedule.length, startAt, endAt!);
+    return baseSchedule.map((step, index) => ({
+      dayNumber: Math.floor((dates[index].getTime() - startAt.getTime()) / 86_400_000),
+      status: step.status,
+      location: step.location,
+      flag: step.flag,
+      activityText: step.activityText,
+      dateLabel: formatDateLabel(dates[index]),
+    }));
+  }
+
+  // no end date: previous random behavior
+  const schedule = randomizeOffsets(baseSchedule, startAt);
   return schedule.map((step) => {
     const eventDate = new Date(startAt);
     eventDate.setUTCDate(eventDate.getUTCDate() + step.dayOffset);
@@ -177,52 +238,54 @@ function buildSeedShipment(
   };
 }
 
-const seedStartAt = new Date();
+function getSeedShipments(): ShipmentPayload[] {
+  const seedStartAt = new Date();
 
-const seedShipments: ShipmentPayload[] = [
-  buildSeedShipment(
-    {
-      trackingNumber: "773G63H12K53",
-      recipientName: "Mr. J. van der Merwe",
-      deliveryAddress: "Plot 44, Rietfontein Farm",
-      townCity: "Bloemfontein",
-      itemsOrdered: ["Starlink Mounting Kit", "Backup Power Unit", "10m Cable"],
-      carrierLabel: "Maersk Air Cargo",
-    },
-    "Bloemfontein, South Africa",
-    "ZA",
-    seedStartAt,
-    2, 
-  ),
-  buildSeedShipment(
-    {
-      trackingNumber: "6F2K9D1L47P7",
-      recipientName: "Lindiwe Mokoena",
-      deliveryAddress: "18 Olive Grove",
-      townCity: "Cape Town",
-      itemsOrdered: ["Field Router", "Weatherproof Case"],
-      carrierLabel: "Qatar Airways Cargo",
-    },
-    "Cape Town, South Africa",
-    "ZA",
-    seedStartAt,
-    3, 
-  ),
-  buildSeedShipment(
-    {
-      trackingNumber: "50872Q01B29Z",
-      recipientName: "Rafael Santos",
-      deliveryAddress: "7 Garden Walk",
-      townCity: "Durban",
-      itemsOrdered: ["Solar Charge Controller"],
-      carrierLabel: "Emirates SkyCargo",
-    },
-    "Durban, South Africa",
-    "ZA",
-    seedStartAt,
-    8, 
-  ),
-];
+  return [
+    buildSeedShipment(
+      {
+        trackingNumber: "773G63H12K53",
+        recipientName: "Mr. J. van der Merwe",
+        deliveryAddress: "Plot 44, Rietfontein Farm",
+        townCity: "Bloemfontein",
+        itemsOrdered: ["Starlink Mounting Kit", "Backup Power Unit", "10m Cable"],
+        carrierLabel: "Maersk Air Cargo",
+      },
+      "Bloemfontein, South Africa",
+      "ZA",
+      seedStartAt,
+      2,
+    ),
+    buildSeedShipment(
+      {
+        trackingNumber: "6F2K9D1L47P7",
+        recipientName: "Lindiwe Mokoena",
+        deliveryAddress: "18 Olive Grove",
+        townCity: "Cape Town",
+        itemsOrdered: ["Field Router", "Weatherproof Case"],
+        carrierLabel: "Qatar Airways Cargo",
+      },
+      "Cape Town, South Africa",
+      "ZA",
+      seedStartAt,
+      3,
+    ),
+    buildSeedShipment(
+      {
+        trackingNumber: "50872Q01B29Z",
+        recipientName: "Rafael Santos",
+        deliveryAddress: "7 Garden Walk",
+        townCity: "Durban",
+        itemsOrdered: ["Solar Charge Controller"],
+        carrierLabel: "Emirates SkyCargo",
+      },
+      "Durban, South Africa",
+      "ZA",
+      seedStartAt,
+      8,
+    ),
+  ];
+}
 
 function serializeShipment(shipment: typeof shipmentsTable.$inferSelect) {
   return {
@@ -236,7 +299,7 @@ async function resetSeedShipments() {
   await db.delete(shipmentsTable);
   return db
     .insert(shipmentsTable)
-    .values(seedShipments)
+    .values(getSeedShipments())
     .returning();
 }
 
@@ -253,14 +316,55 @@ router.get("/shipments", async (req, res) => {
   }
 });
 
+function parseDateInput(input: unknown, now: Date): Date | null {
+  if (typeof input !== "string" || !input.trim()) return null;
+  const value = input.trim();
+  let day: Date | null = null;
+
+  // "9-29" or "9/29" -> that month/day in the current year
+  const monthDay = value.match(/^(\d{1,2})[-/](\d{1,2})$/);
+  if (monthDay) {
+    day = new Date(Date.UTC(now.getUTCFullYear(), Number(monthDay[1]) - 1, Number(monthDay[2])));
+  } else {
+    // "2026-09-29" from <input type="date"> and other parseable formats
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      day = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
+    }
+  }
+
+  if (!day) return null;
+  // entered date + current time of day
+  day.setUTCHours(now.getUTCHours(), now.getUTCMinutes(), 0, 0);
+  return day;
+}
+
+function parseStartDate(input: unknown, now: Date): Date {
+  return parseDateInput(input, now) ?? now;
+}
+
+
 router.post("/shipments", async (req, res) => {
   try {
     const body = CreateShipmentBody.parse(req.body);
-    const startAt = new Date();
+    const now = new Date();
+    const rawBody = req.body as { startDate?: unknown; endDate?: unknown };
+    const startAt = parseStartDate(rawBody?.startDate, now);
+    const endAt = parseDateInput(rawBody?.endDate, now);
+
+    if (endAt && endAt.getTime() <= startAt.getTime()) {
+      res.status(400).json({ error: "End date must be after the start date." });
+      return;
+    }
+
     const destination = `${body.townCity}, South Africa`;
     const destinationFlag = "ZA";
-    const activityLog = events(destination, destinationFlag, startAt);
+    const activityLog = events(destination, destinationFlag, startAt, endAt);
     const firstStep = activityLog[0];
+    req.log.info(
+      { startAt: startAt.toISOString(), endAt: endAt?.toISOString() ?? null, first: firstStep.dateLabel },
+      "shipment schedule built (v3)",
+    );
 
     const [shipment] = await db
       .insert(shipmentsTable)
@@ -268,6 +372,7 @@ router.post("/shipments", async (req, res) => {
         ...body,
         trackingNumber: body.trackingNumber.toUpperCase(),
         startDate: formatStartDateLabel(startAt),
+        endDate: endAt ? formatStartDateLabel(endAt) : null,
         currentStatus: firstStep.status,
         currentLocation: firstStep.location,
         currentFlag: firstStep.flag,

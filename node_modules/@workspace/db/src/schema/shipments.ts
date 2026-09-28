@@ -22,6 +22,7 @@ export const shipmentsTable = pgTable(
     itemsOrdered: jsonb("items_ordered").$type<string[]>().notNull(),
     carrierLabel: text("carrier_label").notNull(),
     startDate: text("start_date").notNull(),
+    endDate: text("end_date"),
     currentStatus: text("current_status").notNull(),
     currentLocation: text("current_location").notNull(),
     currentFlag: varchar("current_flag", { length: 2 }).notNull(),
