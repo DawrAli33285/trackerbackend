@@ -8,6 +8,8 @@ import {
 } from "@workspace/api-zod";
 import { db, shipmentsTable, type ShipmentActivity } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
+import { requireAdmin } from "../lib/auth";
+
 
 const router: IRouter = Router();
 console.log("[shipments] route file loaded: v3");
@@ -19,8 +21,8 @@ type ShipmentPayload = {
   itemsOrdered: string[];
   carrierLabel: string;
   startDate: string;
-  endDate?: string | null;
   currentStatus: string;
+
   currentLocation: string;
   currentFlag: string;
   demoDay: number;
@@ -39,7 +41,7 @@ type ScheduleStep = {
 
 export function buildSchedule(destination: string, destinationFlag: string): ScheduleStep[] {
   return [
-    { dayOffset: 1, hour: 9, minute: 0, status: "Order Placed", location: "Austin, USA", flag: "US", activityText: "Order confirmed. Preparing for packing. [v3]" },
+    { dayOffset: 1, hour: 9, minute: 0, status: "Order Placed", location: "Austin, USA", flag: "US", activityText: "Order confirmed. Preparing for packing." },
     { dayOffset: 3, hour: 9, minute: 0, status: "Packed at Warehouse", location: "Austin, USA", flag: "US", activityText: "Item packed and sealed." },
     { dayOffset: 5, hour: 9, minute: 0, status: "Picked Up", location: "Austin, USA", flag: "US", activityText: "Parcel collected by freight partner." },
     { dayOffset: 7, hour: 9, minute: 0, status: "At Export Hub", location: "Dallas, USA", flag: "US", activityText: "Parcel arrived at Dallas export hub." },
@@ -124,7 +126,7 @@ function randomizeOffsets(schedule: ScheduleStep[], startAt: Date): ScheduleStep
   let prevMinutes = startAt.getUTCHours() * 60 + startAt.getUTCMinutes();
 
   return schedule.map((step, index) => {
-    // "Order Placed" = the current date and time
+    
     if (index === 0) {
       return {
         ...step,
@@ -134,13 +136,13 @@ function randomizeOffsets(schedule: ScheduleStep[], startAt: Date): ScheduleStep
       };
     }
 
-    // Same-day steps only after step 1, and only if there's time left in the day
+    
     const shareDay =
       index > 1 && prevMinutes < MINUTES_IN_DAY - 1 && Math.random() < 0.2;
 
     let minutesOfDay: number;
     if (shareDay) {
-      // strictly later than the previous event on the same day
+      
       minutesOfDay =
         prevMinutes + 1 + Math.floor(Math.random() * (MINUTES_IN_DAY - 1 - prevMinutes));
     } else {
@@ -159,7 +161,7 @@ function randomizeOffsets(schedule: ScheduleStep[], startAt: Date): ScheduleStep
 }
 
 
-// First step = startAt, last step = endAt, everything else random in between (always in order)
+
 function spreadDates(count: number, startAt: Date, endAt: Date): Date[] {
   const span = endAt.getTime() - startAt.getTime();
   const middle = Array.from({ length: Math.max(count - 2, 0) }, () => Math.random()).sort((a, b) => a - b);
@@ -191,7 +193,7 @@ function events(
     }));
   }
 
-  // no end date: previous random behavior
+ 
   const schedule = randomizeOffsets(baseSchedule, startAt);
   return schedule.map((step) => {
     const eventDate = new Date(startAt);
@@ -303,7 +305,7 @@ async function resetSeedShipments() {
     .returning();
 }
 
-router.get("/shipments", async (req, res) => {
+router.get("/shipments", requireAdmin, async (req, res) => {
   try {
     const shipments = await db
       .select()
@@ -316,17 +318,23 @@ router.get("/shipments", async (req, res) => {
   }
 });
 
-function parseDateInput(input: unknown, now: Date): Date | null {
+function parseTimeInput(input: unknown): { hours: number; minutes: number } | null {
+  if (typeof input !== "string") return null;
+  const match = input.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  return match ? { hours: Number(match[1]), minutes: Number(match[2]) } : null;
+}
+
+function parseDateInput(input: unknown, now: Date, timeInput?: unknown): Date | null {
   if (typeof input !== "string" || !input.trim()) return null;
   const value = input.trim();
   let day: Date | null = null;
 
-  // "9-29" or "9/29" -> that month/day in the current year
+ 
   const monthDay = value.match(/^(\d{1,2})[-/](\d{1,2})$/);
   if (monthDay) {
     day = new Date(Date.UTC(now.getUTCFullYear(), Number(monthDay[1]) - 1, Number(monthDay[2])));
   } else {
-    // "2026-09-29" from <input type="date"> and other parseable formats
+
     const parsed = new Date(value);
     if (!Number.isNaN(parsed.getTime())) {
       day = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
@@ -334,35 +342,36 @@ function parseDateInput(input: unknown, now: Date): Date | null {
   }
 
   if (!day) return null;
-  // entered date + current time of day
-  day.setUTCHours(now.getUTCHours(), now.getUTCMinutes(), 0, 0);
-  return day;
-}
 
-function parseStartDate(input: unknown, now: Date): Date {
-  return parseDateInput(input, now) ?? now;
-}
+   const time = parseTimeInput(timeInput);
+   day.setUTCHours(time?.hours ?? now.getUTCHours(), time?.minutes ?? now.getUTCMinutes(), 0, 0);
+   return day;
+ }
+ 
+ function parseStartDate(input: unknown, now: Date, timeInput?: unknown): Date {
+   return parseDateInput(input, now, timeInput) ?? now;
+ }
+ 
+ function formatStartTime(date: Date): string {
+   return `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+ }
 
-
-router.post("/shipments", async (req, res) => {
+router.post("/shipments", requireAdmin, async (req, res) => {
   try {
     const body = CreateShipmentBody.parse(req.body);
     const now = new Date();
-    const rawBody = req.body as { startDate?: unknown; endDate?: unknown };
-    const startAt = parseStartDate(rawBody?.startDate, now);
-    const endAt = parseDateInput(rawBody?.endDate, now);
-
-    if (endAt && endAt.getTime() <= startAt.getTime()) {
-      res.status(400).json({ error: "End date must be after the start date." });
-      return;
-    }
+    const rawBody = req.body as { startDate?: unknown; startTime?: unknown };
+    const chosenStart = parseStartDate(rawBody?.startDate, now, rawBody?.startTime);
+    const startAt = chosenStart < now ? now : chosenStart;
+    
 
     const destination = `${body.townCity}, South Africa`;
     const destinationFlag = "ZA";
-    const activityLog = events(destination, destinationFlag, startAt, endAt);
+    const activityLog = events(destination, destinationFlag, startAt);
     const firstStep = activityLog[0];
+
     req.log.info(
-      { startAt: startAt.toISOString(), endAt: endAt?.toISOString() ?? null, first: firstStep.dateLabel },
+      { startAt: startAt.toISOString(), first: firstStep.dateLabel },
       "shipment schedule built (v3)",
     );
 
@@ -372,8 +381,9 @@ router.post("/shipments", async (req, res) => {
         ...body,
         trackingNumber: body.trackingNumber.toUpperCase(),
         startDate: formatStartDateLabel(startAt),
-        endDate: endAt ? formatStartDateLabel(endAt) : null,
+        startTime: formatStartTime(startAt),
         currentStatus: firstStep.status,
+       
         currentLocation: firstStep.location,
         currentFlag: firstStep.flag,
         demoDay: firstStep.dayNumber,
@@ -396,7 +406,7 @@ router.post("/shipments", async (req, res) => {
   }
 });
 
-router.post("/shipments/reset", async (req, res) => {
+router.post("/shipments/reset", requireAdmin, async (req, res) => {
   try {
     const shipments = await resetSeedShipments();
     res.json(shipments.map(serializeShipment));
@@ -406,7 +416,7 @@ router.post("/shipments/reset", async (req, res) => {
   }
 });
 
-router.get("/shipments/summary", async (req, res) => {
+router.get("/shipments/summary", requireAdmin, async (req, res) => {
   try {
     const shipments = await db.select().from(shipmentsTable).orderBy(desc(shipmentsTable.updatedAt));
     const countBy = (matcher: (status: string) => boolean) =>
@@ -447,7 +457,7 @@ router.get("/shipments/:trackingNumber", async (req, res) => {
   }
 });
 
-router.patch("/shipments/:trackingNumber", async (req, res) => {
+router.patch("/shipments/:trackingNumber", requireAdmin, async (req, res) => {
   try {
     const { trackingNumber } = DeleteShipmentParams.parse(req.params);
     const updates = UpdateShipmentBody.parse(req.body);
@@ -475,7 +485,7 @@ router.patch("/shipments/:trackingNumber", async (req, res) => {
   }
 });
 
-router.delete("/shipments/:trackingNumber", async (req, res) => {
+router.delete("/shipments/:trackingNumber", requireAdmin, async (req, res) => {
   try {
     const { trackingNumber } = UpdateShipmentParams.parse(req.params);
     const deleted = await db

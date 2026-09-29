@@ -20,7 +20,6 @@ export interface Shipment {
   itemsOrdered: string[];
   carrierLabel: string;
   startDate: string;
-  endDate?: string | null;
   currentStatus: string;
   currentLocation: string;
   /** @maxLength 2 */
